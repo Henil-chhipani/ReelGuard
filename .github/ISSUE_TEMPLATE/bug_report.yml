@@ -1,0 +1,71 @@
+name: Bug report
+description: ReelGuard did not block a share, or something else went wrong.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please include enough detail to reproduce the issue.
+        For security problems, use private vulnerability reporting instead.
+
+  - type: input
+    id: version
+    attributes:
+      label: ReelGuard version
+      description: Shown in the app or in the APK filename.
+      placeholder: "1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device and Android version
+      placeholder: "Samsung Galaxy S24, Android 16 / One UI 8"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: variant
+    attributes:
+      label: Instagram app
+      options:
+        - Instagram (com.instagram.android)
+        - Instagram beta / Basel (com.instagram.basel)
+        - Instagram Lite (com.instagram.lite)
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: instagram-version
+    attributes:
+      label: Instagram version
+      description: Find it in Instagram settings, About.
+      placeholder: "452.1.0.53.64"
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a reel
+        2. Tap Share
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+      placeholder: "Expected the sheet to close. It stayed open and the counter did not change."
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Screen recording, logs, whether Accessibility shows ReelGuard as active, etc.

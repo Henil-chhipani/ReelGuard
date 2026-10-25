@@ -4,3 +4,11 @@ local.properties
 *.iml
 .idea/
 app/build/
+keystore.properties
+keystore/
+dist/
+.DS_Store
+*.jks
+*.keystore
+*.apk
+*.aab
