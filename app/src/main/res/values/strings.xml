@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ReelGuard</string>
+    <string name="service_label">ReelGuard share blocker</string>
+    <string name="accessibility_description">ReelGuard watches for the Instagram share sheet and closes it right away, so you cannot send reels. It only looks at screen text inside Instagram, never reads your messages, and does not use the internet.</string>
+</resources>
