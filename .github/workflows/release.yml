@@ -61,11 +61,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          NOTES="${RUNNER_TEMP}/release-notes.md"
+          sed "s/{{VERSION}}/${VERSION}/g" .github/release-notes.md > "$NOTES"
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" ReelGuard-*.apk SHA256SUMS.txt --clobber
           else
             gh release create "$GITHUB_REF_NAME" ReelGuard-*.apk SHA256SUMS.txt \
-              --title "$GITHUB_REF_NAME" --generate-notes
+              --title "ReelGuard ${VERSION}" \
+              --notes "$(cat "$NOTES")" \
+              --generate-notes
           fi
 
       - name: Clean up signing key

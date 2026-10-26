@@ -13,13 +13,15 @@ the habit without breaking scrolling or watching reels.
 - Closes Instagram's share sheet for `com.instagram.android`,
   `com.instagram.basel`, and `com.instagram.lite`.
 - Local "blocked today" and all-time counters.
+- Share-free streak with your start date and best streak.
 - Optional "Share blocked" toast.
+- Material 3 interface in Kotlin and Jetpack Compose, with light and dark themes.
 - No internet permission, no analytics, no accounts.
-- No AndroidX or Compose; the APK is about 16 KB.
+- The release APK is about 1 MB.
 
 ## Install
 
-1. Download `ReelGuard-vX.Y.Z.apk` from the latest GitHub release, and compare
+1. Download `ReelGuard-X.Y.Z.apk` from the latest GitHub release, and compare
    it with the published `SHA256SUMS.txt`.
 2. Open the APK and install it (tap **Install anyway** if Play Protect warns).
 3. Open ReelGuard, tap **Enable ReelGuard**, and turn on
@@ -40,6 +42,7 @@ You need JDK 17 and Android SDK 36.
 ```bash
 ./gradlew assembleDebug    # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew assembleRelease  # signed only if keystore.properties exists
+./gradlew test lintDebug   # unit tests and lint
 ```
 
 Release signing is optional locally. Create `keystore.properties` (gitignored):
@@ -60,8 +63,8 @@ Push a tag and the release workflow builds the signed APK, generates
 `SHA256SUMS.txt`, and attaches both to the GitHub release:
 
 ```bash
-git tag v1.0.1
-git push origin v1.0.1
+git tag v1.1.0
+git push origin v1.1.0
 ```
 
 Configure these repository secrets first:
@@ -75,18 +78,28 @@ and looks for the share sheet's text ("Send to", "Add to story", "Copy link"),
 then performs a global Back once. Detection requires a pair of markers, so
 ordinary captions do not trigger it. A 1.2 s cooldown prevents back-spam.
 
+The share-free streak starts the first time protection is enabled and restarts
+whenever a share sheet is blocked, so it tracks how long you have gone without
+trying to share. Best streak keeps your previous record after a restart. All of
+it is stored locally.
+
 Project layout:
 
-- `ShareGuardService.java` - accessibility service and share-sheet detection
-- `MainActivity.java` - status, counter, toast toggle, Accessibility shortcut
-- `Prefs.java` - local counters and settings
+- `MainActivity.kt` - Compose entry point, service status, Accessibility shortcut
+- `ShareGuardService.kt` - accessibility service and share-sheet detection
+- `Prefs.kt` - local counters, streak timestamps, and settings
+- `StreakFormatter.kt` - formats the streak and start date
+- `ui/MainScreen.kt` - Material 3 screen, dialogs, and status cards
+- `ui/theme/Theme.kt` - light and dark color schemes and typography
 
 ## Limitations
 
 - Instagram UI changes can break detection; update the marker strings in
-  `ShareGuardService.java` if a new version renames things.
+  `ShareGuardService.kt` if a new version renames things.
 - Tapping Share may briefly flash the sheet before it closes.
 - Detection is react-and-close, not a true touch block.
+- The streak only reflects share attempts ReelGuard can see; attempts made
+  while protection is off are not recorded.
 - It blocks honest shares too (posts, stories, profiles), not just reels.
 - Google Play does not allow this use of AccessibilityService, so distribution
   is GitHub releases only.
@@ -95,8 +108,8 @@ Project layout:
 
 ## Privacy
 
-No internet permission, no telemetry, no accounts. Only the counters and the
-toast preference are stored locally in app-private storage.
+No internet permission, no telemetry, no accounts. Only the counters, streak
+timestamps, and preferences are stored locally in app-private storage.
 
 ## Contributing
 

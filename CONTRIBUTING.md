@@ -21,7 +21,7 @@ on a device or emulator.
 ## Detection changes
 
 The detection logic lives in
-`app/src/main/java/com/reelguard/app/ShareGuardService.java`:
+`app/src/main/java/com/reelguard/app/ShareGuardService.kt`:
 
 - `TARGETS` lists the supported Instagram package names.
 - `hasShareSheet()` decides whether a sheet is open. It requires combinations of
@@ -36,24 +36,26 @@ When changing markers:
 
 ## Pull requests
 
-- Run `./gradlew lintDebug assembleDebug` before opening a PR.
+- Run `./gradlew test lintDebug assembleDebug` before opening a PR.
 - Do not add network permissions, analytics, or third-party dependencies without
   discussing them first.
 - Never commit keystores, `keystore.properties`, APKs, or build outputs.
-- Keep the UI on framework views; the app intentionally has no AndroidX or
-  Compose dependency.
+- Keep the UI on the existing Kotlin, Jetpack Compose, and Material 3 stack.
+  Avoid adding third-party UI or analytics libraries.
 
 ## Releases (maintainers)
 
 1. Bump `versionCode` and `versionName` in `app/build.gradle.kts`.
 2. Make sure these repository secrets exist:
    `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
-3. Tag and push:
+3. Update `.github/release-notes.md` if the install steps or feature summary
+   changed. It becomes the release description with the generated change list.
+4. Tag and push:
    ```bash
-   git tag v1.0.1
-   git push origin v1.0.1
+   git tag -a v1.1.0 -m "ReelGuard 1.1.0"
+   git push origin v1.1.0
    ```
-4. The release workflow builds the signed APK, generates `SHA256SUMS.txt`, and
+5. The release workflow builds the signed APK, generates `SHA256SUMS.txt`, and
    attaches both to the GitHub release.
 
 Encode the keystore for the secret with:
