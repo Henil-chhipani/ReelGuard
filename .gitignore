@@ -3,6 +3,7 @@ build/
 local.properties
 *.iml
 .idea/
+.vscode/
 app/build/
 keystore.properties
 keystore/
