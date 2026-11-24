@@ -17,6 +17,8 @@ the habit without breaking scrolling or watching reels.
 - Local "blocked today" and all-time counters for shares and comments.
 - Share-free streak with your start date and best streak.
 - Optional "Share blocked" and "Comments hidden" toasts.
+- Quick Settings tile and an in-app pause button, so you can turn blocking off
+  before paying with a UPI app.
 - Material 3 interface in Kotlin and Jetpack Compose, with light and dark themes.
 - No internet permission, no analytics, no accounts.
 - The release APK is about 1 MB.
@@ -30,6 +32,9 @@ the habit without breaking scrolling or watching reels.
    **ReelGuard blocker** in Accessibility.
 4. Open Instagram and tap Share on a reel, or open comments. The sheet should
    close and the matching counter should increase.
+5. Before paying with a UPI app, tap the **ReelGuard** Quick Settings tile or
+   **Pause while paying** in the app. Turn protection back on in Accessibility
+   once you are done.
 
 On Android 13+ a sideloaded app is blocked from Accessibility until you allow
 it: **App info -> three-dot menu -> Allow restricted settings**, then try again.
@@ -90,8 +95,10 @@ stored locally.
 
 Project layout:
 
-- `MainActivity.kt` - Compose entry point, service status, Accessibility shortcut
+- `MainActivity.kt` - Compose entry point, service status, pause, Accessibility shortcut
 - `ShareGuardService.kt` - accessibility service, share and comment detection
+- `ReelGuardTileService.kt` - Quick Settings tile for pausing and re-enabling
+- `ServiceStatus.kt` - shared check for whether the Accessibility service is on
 - `SheetMatcher.kt` - matches comment-sheet labels
 - `Prefs.kt` - local counters, streak timestamps, and settings
 - `StreakFormatter.kt` - formats the streak and start date
@@ -110,6 +117,9 @@ Project layout:
   while protection is off are not recorded.
 - Comment blocking closes any Instagram comment sheet, including on regular
   posts, not only reels.
+- UPI apps such as Google Pay, PhonePe, and Paytm may refuse payments while any
+  Accessibility service is enabled, ReelGuard included. Pause ReelGuard before
+  paying, then enable it again when you are done.
 - It blocks honest shares too (posts, stories, profiles), not just reels.
 - Google Play does not allow this use of AccessibilityService, so distribution
   is GitHub releases only.
