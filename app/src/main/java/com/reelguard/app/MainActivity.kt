@@ -31,6 +31,7 @@ class MainActivity : ComponentActivity() {
                         Prefs.reset(this)
                         refresh()
                     },
+                    onPause = ::pauseService,
                     onOpenAccessibility = ::openAccessibilitySettings,
                 )
             }
@@ -44,7 +45,7 @@ class MainActivity : ComponentActivity() {
 
     private fun refresh() {
         val now = System.currentTimeMillis()
-        val serviceEnabled = isServiceEnabled()
+        val serviceEnabled = ServiceStatus.isEnabled(this)
         if (serviceEnabled) {
             Prefs.ensureJourneyStarted(this)
         }
@@ -89,19 +90,10 @@ class MainActivity : ComponentActivity() {
         state = state.copy(commentBlockEnabled = enabled)
     }
 
-    private fun isServiceEnabled(): Boolean {
-        val enabled = runCatching {
-            Settings.Secure.getInt(contentResolver, Settings.Secure.ACCESSIBILITY_ENABLED)
-        }.getOrDefault(0)
-        if (enabled != 1) return false
-
-        val services = Settings.Secure.getString(
-            contentResolver,
-            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
-        ) ?: return false
-
-        val me = "$packageName/${ShareGuardService::class.java.name}"
-        return services.split(':').any { it.equals(me, ignoreCase = true) }
+    private fun pauseService(): Boolean {
+        if (!ShareGuardService.requestPause()) return false
+        state = state.copy(serviceEnabled = false)
+        return true
     }
 
     private fun openAccessibilitySettings() {

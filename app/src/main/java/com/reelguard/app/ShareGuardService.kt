@@ -2,6 +2,7 @@ package com.reelguard.app
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.content.Intent
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -26,6 +27,7 @@ class ShareGuardService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        running = this
         Prefs.ensureJourneyStarted(this)
         serviceInfo?.let { info ->
             info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
@@ -169,7 +171,28 @@ class ShareGuardService : AccessibilityService() {
         handler.removeCallbacksAndMessages(null)
     }
 
-    private companion object {
+    override fun onUnbind(intent: Intent?): Boolean {
+        running = null
+        return super.onUnbind(intent)
+    }
+
+    override fun onDestroy() {
+        running = null
+        handler.removeCallbacksAndMessages(null)
+        super.onDestroy()
+    }
+
+    companion object {
+        @Volatile
+        private var running: ShareGuardService? = null
+
+        /** Turns the service off so UPI apps stop refusing payments. */
+        fun requestPause(): Boolean {
+            val service = running ?: return false
+            service.disableSelf()
+            return true
+        }
+
         val TARGETS = setOf(
             "com.instagram.android",
             "com.instagram.basel",

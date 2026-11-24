@@ -37,6 +37,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -89,13 +90,16 @@ fun MainScreen(
     onToggleToast: (Boolean) -> Unit,
     onToggleComments: (Boolean) -> Unit,
     onReset: () -> Unit,
+    onPause: () -> Boolean,
     onOpenAccessibility: () -> Unit,
 ) {
     var showResetDialog by rememberSaveable { mutableStateOf(false) }
     var showSetupDialog by rememberSaveable { mutableStateOf(false) }
+    var showPausedDialog by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val resetMessage = stringResource(R.string.counters_reset)
+    val pauseFailedMessage = stringResource(R.string.pause_failed)
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -125,6 +129,13 @@ fun MainScreen(
                     commentsEnabled = state.commentBlockEnabled,
                     onOpenAccessibility = onOpenAccessibility,
                     onShowSetup = { showSetupDialog = true },
+                    onPause = {
+                        if (onPause()) {
+                            showPausedDialog = true
+                        } else {
+                            scope.launch { snackbarHostState.showSnackbar(pauseFailedMessage) }
+                        }
+                    },
                 )
 
                 ProgressCard(
@@ -181,6 +192,42 @@ fun MainScreen(
     if (showSetupDialog) {
         SetupDialog(onDismiss = { showSetupDialog = false })
     }
+
+    if (showPausedDialog) {
+        AlertDialog(
+            onDismissRequest = { showPausedDialog = false },
+            icon = { Icon(Icons.Filled.Lock, contentDescription = null) },
+            title = { Text(stringResource(R.string.pause_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = stringResource(R.string.pause_body),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        text = stringResource(R.string.pause_shortcut_tip),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showPausedDialog = false
+                        onOpenAccessibility()
+                    },
+                ) {
+                    Text(stringResource(R.string.pause_open_settings))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPausedDialog = false }) {
+                    Text(stringResource(R.string.pause_done))
+                }
+            },
+        )
+    }
 }
 
 @Composable
@@ -226,6 +273,7 @@ private fun ProtectionCard(
     commentsEnabled: Boolean,
     onOpenAccessibility: () -> Unit,
     onShowSetup: () -> Unit,
+    onPause: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -280,6 +328,27 @@ private fun ProtectionCard(
                         },
                     ),
                     style = MaterialTheme.typography.labelLarge,
+                )
+            }
+            if (enabled) {
+                Spacer(Modifier.height(10.dp))
+                OutlinedButton(
+                    onClick = onPause,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(16.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.action_pause),
+                        style = MaterialTheme.typography.labelLarge,
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.upi_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             if (!enabled) {
@@ -829,6 +898,7 @@ private fun ActivePreview() {
             onToggleToast = {},
             onToggleComments = {},
             onReset = {},
+            onPause = { false },
             onOpenAccessibility = {},
         )
     }
@@ -853,6 +923,7 @@ private fun OffPreview() {
             onToggleToast = {},
             onToggleComments = {},
             onReset = {},
+            onPause = { false },
             onOpenAccessibility = {},
         )
     }

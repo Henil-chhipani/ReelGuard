@@ -71,4 +71,20 @@
     <string name="share_blocked_toast">Share blocked</string>
     <string name="comments_blocked_toast">Comments hidden</string>
     <string name="settings_error">Could not open Accessibility settings</string>
+
+    <string name="action_pause">Pause while paying</string>
+    <string name="upi_hint">UPI apps such as Google Pay, PhonePe, and Paytm may refuse payments while any Accessibility service is on. Pause ReelGuard before paying.</string>
+    <string name="pause_title">Protection paused</string>
+    <string name="pause_body">ReelGuard is off, so UPI apps should work normally. Android only lets you turn an Accessibility service back on yourself, so enable it again when you are done.</string>
+    <string name="pause_shortcut_tip">Tip: in Accessibility → ReelGuard, turn on Shortcut to toggle it with the volume keys.</string>
+    <string name="pause_open_settings">Open Accessibility</string>
+    <string name="pause_done">Done</string>
+    <string name="pause_failed">Could not pause. Open Accessibility settings and turn ReelGuard off.</string>
+
+    <string name="tile_label">ReelGuard</string>
+    <string name="tile_subtitle_on">Blocking share sheets</string>
+    <string name="tile_subtitle_off">Tap to enable</string>
+    <string name="tile_content_on">ReelGuard is on. Tap to pause.</string>
+    <string name="tile_content_off">ReelGuard is off. Tap to open Accessibility.</string>
+    <string name="tile_paused_toast">ReelGuard paused</string>
 </resources>
