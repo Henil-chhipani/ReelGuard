@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
                 MainScreen(
                     state = state,
                     onToggleToast = ::setToastEnabled,
+                    onToggleComments = ::setCommentBlockEnabled,
                     onReset = {
                         Prefs.reset(this)
                         refresh()
@@ -66,7 +67,10 @@ class MainActivity : ComponentActivity() {
             serviceEnabled = serviceEnabled,
             todayCount = Prefs.todayCount(this),
             totalCount = Prefs.total(this),
+            commentTodayCount = Prefs.commentTodayCount(this),
+            commentTotalCount = Prefs.commentTotal(this),
             toastEnabled = Prefs.toastEnabled(this),
+            commentBlockEnabled = Prefs.commentBlockEnabled(this),
             versionName = BuildConfig.VERSION_NAME,
             journeyStarted = currentStart > 0L,
             streakText = if (currentStart > 0L) StreakFormatter.duration(currentStreak) else "",
@@ -78,6 +82,11 @@ class MainActivity : ComponentActivity() {
     private fun setToastEnabled(enabled: Boolean) {
         Prefs.setToastEnabled(this, enabled)
         state = state.copy(toastEnabled = enabled)
+    }
+
+    private fun setCommentBlockEnabled(enabled: Boolean) {
+        Prefs.setCommentBlockEnabled(this, enabled)
+        state = state.copy(commentBlockEnabled = enabled)
     }
 
     private fun isServiceEnabled(): Boolean {

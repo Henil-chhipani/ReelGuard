@@ -14,6 +14,10 @@ internal object Prefs {
     private const val KEY_JOURNEY_START = "journey_started_at"
     private const val KEY_LAST_ATTEMPT = "last_attempt_at"
     private const val KEY_BEST_STREAK = "best_streak_ms"
+    private const val KEY_COMMENT_TOTAL = "comments_total"
+    private const val KEY_COMMENT_TODAY = "comments_today"
+    private const val KEY_COMMENT_DAY = "comments_day"
+    private const val KEY_COMMENT_ENABLED = "comment_block_enabled"
 
     private fun sp(context: Context): SharedPreferences =
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -67,6 +71,9 @@ internal object Prefs {
             .putString(KEY_DAY, today())
             .putInt(KEY_TODAY, 0)
             .putInt(KEY_TOTAL, 0)
+            .putString(KEY_COMMENT_DAY, today())
+            .putInt(KEY_COMMENT_TODAY, 0)
+            .putInt(KEY_COMMENT_TOTAL, 0)
             .apply()
     }
 
@@ -75,5 +82,35 @@ internal object Prefs {
 
     fun setToastEnabled(context: Context, enabled: Boolean) {
         sp(context).edit().putBoolean(KEY_TOAST, enabled).apply()
+    }
+
+    fun commentTotal(context: Context): Int = sp(context).getInt(KEY_COMMENT_TOTAL, 0)
+
+    fun commentTodayCount(context: Context): Int {
+        val p = sp(context)
+        if (today() != p.getString(KEY_COMMENT_DAY, "")) return 0
+        return p.getInt(KEY_COMMENT_TODAY, 0)
+    }
+
+    fun recordCommentBlock(context: Context) {
+        val p = sp(context)
+        val day = today()
+        val today = if (day == p.getString(KEY_COMMENT_DAY, "")) {
+            p.getInt(KEY_COMMENT_TODAY, 0)
+        } else {
+            0
+        }
+        p.edit()
+            .putString(KEY_COMMENT_DAY, day)
+            .putInt(KEY_COMMENT_TODAY, today + 1)
+            .putInt(KEY_COMMENT_TOTAL, p.getInt(KEY_COMMENT_TOTAL, 0) + 1)
+            .apply()
+    }
+
+    fun commentBlockEnabled(context: Context): Boolean =
+        sp(context).getBoolean(KEY_COMMENT_ENABLED, true)
+
+    fun setCommentBlockEnabled(context: Context, enabled: Boolean) {
+        sp(context).edit().putBoolean(KEY_COMMENT_ENABLED, enabled).apply()
     }
 }

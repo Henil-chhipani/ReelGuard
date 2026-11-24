@@ -72,7 +72,10 @@ data class UiState(
     val serviceEnabled: Boolean = false,
     val todayCount: Int = 0,
     val totalCount: Int = 0,
+    val commentTodayCount: Int = 0,
+    val commentTotalCount: Int = 0,
     val toastEnabled: Boolean = true,
+    val commentBlockEnabled: Boolean = true,
     val versionName: String = "",
     val journeyStarted: Boolean = false,
     val streakText: String = "",
@@ -84,6 +87,7 @@ data class UiState(
 fun MainScreen(
     state: UiState,
     onToggleToast: (Boolean) -> Unit,
+    onToggleComments: (Boolean) -> Unit,
     onReset: () -> Unit,
     onOpenAccessibility: () -> Unit,
 ) {
@@ -118,6 +122,7 @@ fun MainScreen(
 
                 ProtectionCard(
                     enabled = state.serviceEnabled,
+                    commentsEnabled = state.commentBlockEnabled,
                     onOpenAccessibility = onOpenAccessibility,
                     onShowSetup = { showSetupDialog = true },
                 )
@@ -129,12 +134,16 @@ fun MainScreen(
                     bestStreakText = state.bestStreakText,
                     todayCount = state.todayCount,
                     totalCount = state.totalCount,
+                    commentTodayCount = state.commentTodayCount,
+                    commentTotalCount = state.commentTotalCount,
                     onShowReset = { showResetDialog = true },
                 )
 
                 OptionsCard(
                     toastEnabled = state.toastEnabled,
+                    commentBlockEnabled = state.commentBlockEnabled,
                     onToggleToast = onToggleToast,
+                    onToggleComments = onToggleComments,
                 )
 
                 InfoCard(onShowDetails = { showSetupDialog = true })
@@ -214,6 +223,7 @@ private fun BrandHeader() {
 @Composable
 private fun ProtectionCard(
     enabled: Boolean,
+    commentsEnabled: Boolean,
     onOpenAccessibility: () -> Unit,
     onShowSetup: () -> Unit,
 ) {
@@ -237,7 +247,12 @@ private fun ProtectionCard(
             Spacer(Modifier.height(6.dp))
             Text(
                 text = stringResource(
-                    if (enabled) R.string.protection_on_body else R.string.protection_off_body,
+                    when {
+                        !enabled && commentsEnabled -> R.string.protection_off_body_sheets
+                        !enabled -> R.string.protection_off_body
+                        commentsEnabled -> R.string.protection_on_body_sheets
+                        else -> R.string.protection_on_body
+                    },
                 ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -351,6 +366,8 @@ private fun ProgressCard(
     bestStreakText: String?,
     todayCount: Int,
     totalCount: Int,
+    commentTodayCount: Int,
+    commentTotalCount: Int,
     onShowReset: () -> Unit,
 ) {
     Card(
@@ -370,7 +387,7 @@ private fun ProgressCard(
                 )
                 TextButton(
                     onClick = onShowReset,
-                    enabled = totalCount > 0,
+                    enabled = totalCount > 0 || commentTotalCount > 0,
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Refresh,
@@ -447,6 +464,39 @@ private fun ProgressCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Spacer(Modifier.height(16.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = stringResource(R.string.comments_blocked_title),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CountBlock(
+                    value = commentTodayCount,
+                    label = stringResource(R.string.stat_today),
+                    modifier = Modifier.weight(1f),
+                )
+                VerticalDivider(
+                    modifier = Modifier
+                        .padding(horizontal = 10.dp)
+                        .height(44.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                )
+                CountBlock(
+                    value = commentTotalCount,
+                    label = stringResource(R.string.stat_all_time),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = stringResource(R.string.comments_blocked_caption),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -476,7 +526,9 @@ private fun CountBlock(
 @Composable
 private fun OptionsCard(
     toastEnabled: Boolean,
+    commentBlockEnabled: Boolean,
     onToggleToast: (Boolean) -> Unit,
+    onToggleComments: (Boolean) -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -486,42 +538,81 @@ private fun OptionsCard(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .toggleable(
-                    value = toastEnabled,
-                    role = Role.Switch,
-                    onValueChange = onToggleToast,
-                )
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Filled.CheckCircle,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(22.dp),
-            )
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.toast_title),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = stringResource(R.string.toast_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            Switch(
+        Column {
+            ToggleRow(
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp),
+                    )
+                },
+                title = stringResource(R.string.toast_title),
+                body = stringResource(R.string.toast_body),
                 checked = toastEnabled,
-                onCheckedChange = null,
+                onToggle = onToggleToast,
+            )
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 20.dp),
+                color = MaterialTheme.colorScheme.outlineVariant,
+            )
+            ToggleRow(
+                icon = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_comment),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp),
+                    )
+                },
+                title = stringResource(R.string.comment_block_title),
+                body = stringResource(R.string.comment_block_body),
+                checked = commentBlockEnabled,
+                onToggle = onToggleComments,
             )
         }
+    }
+}
+
+@Composable
+private fun ToggleRow(
+    icon: @Composable () -> Unit,
+    title: String,
+    body: String,
+    checked: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(
+                value = checked,
+                role = Role.Switch,
+                onValueChange = onToggle,
+            )
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        icon()
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = body,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Switch(
+            checked = checked,
+            onCheckedChange = null,
+        )
     }
 }
 
@@ -725,14 +816,18 @@ private fun ActivePreview() {
                 serviceEnabled = true,
                 todayCount = 7,
                 totalCount = 42,
+                commentTodayCount = 3,
+                commentTotalCount = 18,
                 toastEnabled = true,
-                versionName = "1.1.0",
+                commentBlockEnabled = true,
+                versionName = "1.2.0",
                 journeyStarted = true,
                 streakText = "2w 3d",
                 sinceText = "12 Oct",
                 bestStreakText = "3w 1d",
             ),
             onToggleToast = {},
+            onToggleComments = {},
             onReset = {},
             onOpenAccessibility = {},
         )
@@ -748,11 +843,15 @@ private fun OffPreview() {
                 serviceEnabled = false,
                 todayCount = 0,
                 totalCount = 12,
+                commentTodayCount = 0,
+                commentTotalCount = 4,
                 toastEnabled = false,
-                versionName = "1.1.0",
+                commentBlockEnabled = false,
+                versionName = "1.2.0",
                 journeyStarted = false,
             ),
             onToggleToast = {},
+            onToggleComments = {},
             onReset = {},
             onOpenAccessibility = {},
         )

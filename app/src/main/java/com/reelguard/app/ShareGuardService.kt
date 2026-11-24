@@ -11,14 +11,16 @@ import android.widget.Toast
 import java.util.Locale
 
 /**
- * Watches Instagram for its share sheet and presses Back as soon as the sheet
- * shows up, so a reel can never be sent. Accessibility services cannot consume
- * taps inside another app, so closing the sheet is the reliable equivalent.
+ * Watches Instagram for its share and comment sheets and presses Back as soon
+ * as one shows up, so a reel can never be sent and comments stay closed.
+ * Accessibility services cannot consume taps inside another app, so closing
+ * the sheet is the reliable equivalent.
  */
 class ShareGuardService : AccessibilityService() {
 
     private val handler = Handler(Looper.getMainLooper())
     private var cooldownUntil = 0L
+    private var commentCooldownUntil = 0L
     private var lastScan = 0L
     private var lastRetry = 0L
 
@@ -42,11 +44,11 @@ class ShareGuardService : AccessibilityService() {
         if (packageName == null || packageName !in TARGETS) return
 
         val now = SystemClock.uptimeMillis()
-        if (now < cooldownUntil) return
 
         when (event.eventType) {
             AccessibilityEvent.TYPE_VIEW_CLICKED -> {
-                if (isShareButton(labelOf(event.source))) {
+                val label = labelOf(event.source)
+                if (isShareButton(label) || isCommentButton(label)) {
                     handler.postDelayed(::scanAndBlock, CLICK_FALLBACK_MS)
                 }
             }
@@ -70,14 +72,21 @@ class ShareGuardService : AccessibilityService() {
     }
 
     private fun scanAndBlock() {
-        if (SystemClock.uptimeMillis() < cooldownUntil) return
+        val now = SystemClock.uptimeMillis()
 
         val root = rootInActiveWindow ?: return
         val rootPackage = root.packageName?.toString()
         if (rootPackage == null || rootPackage !in TARGETS) return
 
-        if (hasShareSheet(root)) {
+        if (now >= cooldownUntil && hasShareSheet(root)) {
             blockShare()
+            return
+        }
+
+        if (!Prefs.commentBlockEnabled(this)) return
+        if (now < commentCooldownUntil) return
+        if (hasCommentsSheet(root)) {
+            blockComments()
         }
     }
 
@@ -96,12 +105,62 @@ class ShareGuardService : AccessibilityService() {
         false
     }
 
+    private fun hasCommentsSheet(root: AccessibilityNodeInfo): Boolean = try {
+        val hasTitle = findNodes(root, "Comments").any { node ->
+            isCommentsTitleNode(node)
+        }
+        hasTitle && hasCommentsComposer(root)
+    } catch (_: RuntimeException) {
+        false
+    }
+
+    private fun hasCommentsComposer(root: AccessibilityNodeInfo): Boolean {
+        val foundByText = COMMENT_COMPOSER_MARKERS.any { marker ->
+            findNodes(root, marker).any { node ->
+                matchesNode(node, SheetMatcher::isCommentsComposer)
+            }
+        }
+        if (foundByText) return true
+        return hasComposerHint(root)
+    }
+
+    private fun hasComposerHint(root: AccessibilityNodeInfo): Boolean {
+        val pending = ArrayDeque<AccessibilityNodeInfo>()
+        pending.addLast(root)
+        var visited = 0
+        while (pending.isNotEmpty() && visited < MAX_TREE_NODES) {
+            val node = pending.removeLast()
+            visited++
+            val hint = node.hintText?.toString().orEmpty()
+            val description = node.contentDescription?.toString().orEmpty()
+            if (SheetMatcher.isCommentsComposer(hint) ||
+                SheetMatcher.isCommentsComposer(description)
+            ) {
+                return true
+            }
+            for (index in 0 until node.childCount) {
+                node.getChild(index)?.let(pending::addLast)
+            }
+        }
+        return false
+    }
+
     private fun blockShare() {
         cooldownUntil = SystemClock.uptimeMillis() + COOLDOWN_MS
         if (performGlobalAction(GLOBAL_ACTION_BACK)) {
             Prefs.recordBlock(this)
             if (Prefs.toastEnabled(this)) {
                 Toast.makeText(this, R.string.share_blocked_toast, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun blockComments() {
+        commentCooldownUntil = SystemClock.uptimeMillis() + COOLDOWN_MS
+        if (performGlobalAction(GLOBAL_ACTION_BACK)) {
+            Prefs.recordCommentBlock(this)
+            if (Prefs.toastEnabled(this)) {
+                Toast.makeText(this, R.string.comments_blocked_toast, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -121,16 +180,47 @@ class ShareGuardService : AccessibilityService() {
         const val SCAN_THROTTLE_MS = 250L
         const val CLICK_FALLBACK_MS = 600L
         const val RETRY_DELAY_MS = 180L
+        const val MAX_TREE_NODES = 800
+
+        val COMMENT_COMPOSER_MARKERS = listOf(
+            "Add a comment",
+            "View all",
+            "Be the first to comment",
+            "Start the conversation"
+        )
 
         fun hasText(root: AccessibilityNodeInfo, text: String): Boolean {
             val matches = root.findAccessibilityNodeInfosByText(text)
             return !matches.isNullOrEmpty()
         }
 
+        fun findNodes(root: AccessibilityNodeInfo, text: String): List<AccessibilityNodeInfo> =
+            root.findAccessibilityNodeInfosByText(text).orEmpty()
+
+        fun matchesNode(node: AccessibilityNodeInfo, predicate: (String) -> Boolean): Boolean =
+            predicate(node.text?.toString().orEmpty()) ||
+                predicate(node.contentDescription?.toString().orEmpty()) ||
+                predicate(node.hintText?.toString().orEmpty())
+
+        fun isCommentsTitleNode(node: AccessibilityNodeInfo): Boolean {
+            if (node.isClickable) return false
+            val className = node.className?.toString().orEmpty()
+            if (className.endsWith("Button") || className.endsWith("ImageView")) {
+                return false
+            }
+            return SheetMatcher.isCommentsTitle(node.text?.toString().orEmpty())
+        }
+
         fun isShareButton(label: String): Boolean {
             if (label.isEmpty()) return false
             val l = label.trim()
             return l == "share" || l.startsWith("share reel") || l.startsWith("share post")
+        }
+
+        fun isCommentButton(label: String): Boolean {
+            if (label.isEmpty()) return false
+            val l = label.trim()
+            return l == "comment" || l == "comments"
         }
 
         fun labelOf(node: AccessibilityNodeInfo?): String {
