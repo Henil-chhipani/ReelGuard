@@ -1,8 +1,9 @@
 # ReelGuard
 
-Small Android app that stops you from sharing Instagram reels. When Instagram's
-share sheet appears, ReelGuard detects it and immediately presses Back, so the
-reel is never sent. It also counts how many shares you dodged.
+Small Android app that stops you from sharing Instagram reels and reading
+comment sections. When Instagram's share or comment sheet appears, ReelGuard
+detects it and immediately presses Back, so the reel is never sent and comments
+stay closed. It also counts how many share and comment sheets you dodged.
 
 Why not just block the button? Android does not let one app eat taps inside
 another app. Reacting the instant the sheet opens is the reliable way to break
@@ -12,9 +13,10 @@ the habit without breaking scrolling or watching reels.
 
 - Closes Instagram's share sheet for `com.instagram.android`,
   `com.instagram.basel`, and `com.instagram.lite`.
-- Local "blocked today" and all-time counters.
+- Closes the comment sheet on reels and posts.
+- Local "blocked today" and all-time counters for shares and comments.
 - Share-free streak with your start date and best streak.
-- Optional "Share blocked" toast.
+- Optional "Share blocked" and "Comments hidden" toasts.
 - Material 3 interface in Kotlin and Jetpack Compose, with light and dark themes.
 - No internet permission, no analytics, no accounts.
 - The release APK is about 1 MB.
@@ -25,9 +27,9 @@ the habit without breaking scrolling or watching reels.
    it with the published `SHA256SUMS.txt`.
 2. Open the APK and install it (tap **Install anyway** if Play Protect warns).
 3. Open ReelGuard, tap **Enable ReelGuard**, and turn on
-   **ReelGuard share blocker** in Accessibility.
-4. Open Instagram and tap Share on a reel. The sheet should close and the
-   counter should increase.
+   **ReelGuard blocker** in Accessibility.
+4. Open Instagram and tap Share on a reel, or open comments. The sheet should
+   close and the matching counter should increase.
 
 On Android 13+ a sideloaded app is blocked from Accessibility until you allow
 it: **App info -> three-dot menu -> Allow restricted settings**, then try again.
@@ -63,8 +65,8 @@ Push a tag and the release workflow builds the signed APK, generates
 `SHA256SUMS.txt`, and attaches both to the GitHub release:
 
 ```bash
-git tag v1.1.0
-git push origin v1.1.0
+git tag v1.2.0
+git push origin v1.2.0
 ```
 
 Configure these repository secrets first:
@@ -74,19 +76,23 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 ## How it works
 
 `ShareGuardService` is an AccessibilityService. It watches Instagram windows
-and looks for the share sheet's text ("Send to", "Add to story", "Copy link"),
-then performs a global Back once. Detection requires a pair of markers, so
-ordinary captions do not trigger it. A 1.2 s cooldown prevents back-spam.
+and looks for the share sheet's text ("Send to", "Add to story", "Copy link") or
+the comment sheet's title and composer ("Comments", "Add a comment"), then
+performs a global Back once. Detection requires a pair of markers, so ordinary
+captions and the inline comment box on feed posts do not trigger it. A 1.2 s
+cooldown prevents back-spam.
 
 The share-free streak starts the first time protection is enabled and restarts
 whenever a share sheet is blocked, so it tracks how long you have gone without
-trying to share. Best streak keeps your previous record after a restart. All of
-it is stored locally.
+trying to share. Blocked comments are counted separately and do not reset the
+streak. Best streak keeps your previous record after a restart. All of it is
+stored locally.
 
 Project layout:
 
 - `MainActivity.kt` - Compose entry point, service status, Accessibility shortcut
-- `ShareGuardService.kt` - accessibility service and share-sheet detection
+- `ShareGuardService.kt` - accessibility service, share and comment detection
+- `SheetMatcher.kt` - matches comment-sheet labels
 - `Prefs.kt` - local counters, streak timestamps, and settings
 - `StreakFormatter.kt` - formats the streak and start date
 - `ui/MainScreen.kt` - Material 3 screen, dialogs, and status cards
@@ -95,11 +101,15 @@ Project layout:
 ## Limitations
 
 - Instagram UI changes can break detection; update the marker strings in
-  `ShareGuardService.kt` if a new version renames things.
-- Tapping Share may briefly flash the sheet before it closes.
+  `ShareGuardService.kt` and `SheetMatcher.kt` if a new version renames things.
+- Detection uses Instagram's English labels. If Instagram runs in another
+  language, blocking may not work.
+- Tapping Share or Comment may briefly flash the sheet before it closes.
 - Detection is react-and-close, not a true touch block.
 - The streak only reflects share attempts ReelGuard can see; attempts made
   while protection is off are not recorded.
+- Comment blocking closes any Instagram comment sheet, including on regular
+  posts, not only reels.
 - It blocks honest shares too (posts, stories, profiles), not just reels.
 - Google Play does not allow this use of AccessibilityService, so distribution
   is GitHub releases only.

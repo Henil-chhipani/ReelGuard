@@ -1,5 +1,6 @@
-ReelGuard closes Instagram's share sheet before a reel leaves your phone. It
-runs fully offline: no internet permission, no accounts, no analytics.
+ReelGuard closes Instagram's share and comment sheets before a reel leaves your
+phone or you fall into the comments. It runs fully offline: no internet
+permission, no accounts, no analytics.
 
 ## Install
 
@@ -11,9 +12,9 @@ runs fully offline: no internet permission, no accounts, no analytics.
    ```
 3. Open the APK and install it. If Play Protect warns, tap **Install anyway**.
 4. Open ReelGuard, tap **Enable ReelGuard**, and turn on
-   **ReelGuard share blocker** in Accessibility.
-5. Open Instagram and tap Share on a reel. The sheet should close and the
-   counter should increase.
+   **ReelGuard blocker** in Accessibility.
+5. Open Instagram and tap Share on a reel, or open comments. The sheet should
+   close and the matching counter should increase.
 
 On Android 13 and newer, if Android will not let you enable ReelGuard, open
 **App info** → three-dot menu → **Allow restricted settings**, then try again.
@@ -26,9 +27,12 @@ On Android 13 and newer, if Android will not let you enable ReelGuard, open
 ## What it does
 
 - Closes the share sheet in supported Instagram apps and counts blocked shares.
+- Closes comment sheets on reels and posts, with a separate count. You can turn
+  comment blocking off without turning off share blocking.
 - Tracks a share-free streak with your start date and best streak. The streak
-  restarts when a share is blocked.
-- Shows an optional "Share blocked" toast and follows your light or dark theme.
+  restarts when a share is blocked; blocked comments do not reset it.
+- Shows optional "Share blocked" and "Comments hidden" toasts and follows your
+  light or dark theme.
 
 ## Notes
 

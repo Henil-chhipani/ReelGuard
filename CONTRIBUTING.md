@@ -21,18 +21,25 @@ on a device or emulator.
 ## Detection changes
 
 The detection logic lives in
-`app/src/main/java/com/reelguard/app/ShareGuardService.kt`:
+`app/src/main/java/com/reelguard/app/ShareGuardService.kt` and
+`app/src/main/java/com/reelguard/app/SheetMatcher.kt`:
 
 - `TARGETS` lists the supported Instagram package names.
-- `hasShareSheet()` decides whether a sheet is open. It requires combinations of
-  markers so ordinary captions ("send this to...") do not trigger a Back press.
+- `hasShareSheet()` decides whether a share sheet is open. It requires
+  combinations of markers so ordinary captions ("send this to...") do not
+  trigger a Back press.
+- `SheetMatcher` decides whether a comment sheet is open. It requires the
+  "Comments" title plus a composer marker, so the inline comment box on a feed
+  post is not treated as an open sheet.
+- `SheetMatcherTest` covers the comment markers.
 
 When changing markers:
 
 1. Reproduce the sheet on a real device and note the exact visible text.
 2. Add the smallest pair of markers that reliably identifies the sheet.
-3. Verify that normal reels, captions, and the three-dot menu still work.
-4. Confirm the share sheet closes and the counter increments.
+3. Verify that normal reels, captions, the inline comment box, and the
+   three-dot menu still work.
+4. Confirm the matching sheet closes and its counter increments.
 
 ## Pull requests
 
@@ -52,8 +59,8 @@ When changing markers:
    changed. It becomes the release description with the generated change list.
 4. Tag and push:
    ```bash
-   git tag -a v1.1.0 -m "ReelGuard 1.1.0"
-   git push origin v1.1.0
+   git tag -a v1.2.0 -m "ReelGuard 1.2.0"
+   git push origin v1.2.0
    ```
 5. The release workflow builds the signed APK, generates `SHA256SUMS.txt`, and
    attaches both to the GitHub release.
